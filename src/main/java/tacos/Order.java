@@ -73,6 +73,8 @@ public class Order implements Serializable {
   void placedAt() {
     this.placedAt = new Date();
   }
-  
+
+  @ManyToOne
+  private User user;
 }
 //end::allButDetailProperties[]

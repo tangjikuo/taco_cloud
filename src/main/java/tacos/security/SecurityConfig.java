@@ -8,11 +8,9 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.crypto.password.StandardPasswordEncoder;
-import org.springframework.security.crypto.scrypt.SCryptPasswordEncoder;
 
-import javax.sql.DataSource;
 
 @Configuration
 @EnableWebSecurity
@@ -22,11 +20,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 //    DataSource dataSource;
     @Autowired
     private UserDetailsService userDetailsService;
-//
-    @Bean
-    public StandardPasswordEncoder encoder(){
-        return new StandardPasswordEncoder("53cr3t");
-    }
+
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         // 内存定义用户
@@ -49,15 +43,36 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 //                .passwordAttribute("passcode");
 
         http.authorizeRequests().antMatchers("/design", "/orders")
-                .hasRole("USER")
-                .antMatchers("/", "/**").permitAll()
+                .access("hasRole('USER')")
+                .antMatchers("/", "/**").access("permitAll")
+
                 .and()
-                .formLogin().loginPage("/login")
-                .loginProcessingUrl("/authenticate")
-                .usernameParameter("user")
-                .passwordParameter("pwd")
+                .formLogin()
+                .loginPage("/login")
+
                 .and()
-                .logout().logoutSuccessUrl("/login");
+                .logout()
+                .logoutSuccessUrl("/")
+
+                .and()
+                .csrf()
+                .ignoringAntMatchers("/h2-console/**")
+
+                .and()
+                .headers()
+                .frameOptions()
+                .sameOrigin();
 
     }
+
+    @Bean
+    public PasswordEncoder encoder() {
+        return new StandardPasswordEncoder("53cr3t");
+    }
+
+    @Override
+    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+        auth.userDetailsService(userDetailsService).passwordEncoder(encoder());
+    }
+
 }
